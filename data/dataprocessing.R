@@ -5,15 +5,11 @@
 library(dplyr)
 library(tidyverse)
 library(caret)
+library(ggplot2)
 
 #Read and limit data
 data=read.table("data/student-por.csv",sep=";",header=TRUE)
 data <- data %>% select(-c(G1, G2))
-
-#logistic regression
-mod1<-glm(sex~school + studytime + activities + romantic +
-            famrel + freetime + goout + Walc, data=data, family="binomial")
-summary(mod1)
 
 #KNN
 set.seed(1)
@@ -38,20 +34,10 @@ res
 #misclassification rate
 1-sum(diag(res$table))/sum(res$table)
 
-rf_fit <- train(sex ~ school + studytime + activities + romantic +
-                   famrel + freetime + goout + Walc, data = dataTrain, method = "rf", 
-                 trControl=trctrl, preProcess = c("center", "scale"), tuneLength=20)
-plot(rf_fit)
-rf_fit
-#make predictions on test data
-test_pred <- predict(rf_fit, newdata = dataTest)
-res <- confusionMatrix(test_pred, dataTest$sex)
-res
-#misclassification rate
-1-sum(diag(res$table))/sum(res$table)
 
-
-log1<-train(sex ~ . -Walc -school, data = dataTrain, 
+#logistic regression
+log1<-train(sex ~ school + studytime + activities + romantic +
+              famrel + freetime + goout + Walc, data = dataTrain, 
              trControl=trctrl,method="glm",family=binomial())
 
 summary(log1)
@@ -76,19 +62,16 @@ plot(cumsum(PCs$sdev^2/sum(PCs$sdev^2)), xlab = "Principal Component",
      ylab = "Cum. Prop of Variance Explained", ylim = c(0, 1), type = 'b')
 
 
-#Logistic Regression Model box        
-box(
-  checkboxInput("logOptVars", h4("Choose predictor variables to include")),
-  conditionalPanel(condition = "input.logOptVars == true",
-                   uiOutput("predictors")
-  ),
-  width=11,verbatimTextOutput("knnprint")
-) 
+#scatterplots
+g <- ggplot(data, aes(x=studytime))
+g + geom_bar(aes(fill = data$sex))
+g
 
-output$predictors <- renderUI({
-  checkboxGroupInput("predictors", "Predictor Variables:", choices = c("school", "studytime"))
-})
+mean(data$studytime[data$sex=="F"])
+mean(data$studytime[data$sex=="M"])
 
+mean(data$sex[data$sex=="F"])
+mean(data$Walc[data$sex=="M"])
 
-
-
+table(data$sex, data$romantic)
+table()
