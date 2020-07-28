@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(RColorBrewer)
+library(caret)
 
 ui <- dashboardPage(
   dashboardHeader(title = "Project3 Shiny App"),

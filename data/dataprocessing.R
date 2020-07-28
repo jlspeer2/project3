@@ -62,16 +62,13 @@ plot(cumsum(PCs$sdev^2/sum(PCs$sdev^2)), xlab = "Principal Component",
      ylab = "Cum. Prop of Variance Explained", ylim = c(0, 1), type = 'b')
 
 
-#scatterplots
+#graphical and numeric summaries
 g <- ggplot(data, aes(x=studytime))
 g + geom_bar(aes(fill = data$sex))
 g
 
-mean(data$studytime[data$sex=="F"])
-mean(data$studytime[data$sex=="M"])
-
 mean(data$sex[data$sex=="F"])
-mean(data$Walc[data$sex=="M"])
+mean(data$sex[data$sex=="M"])
 
 table(data$sex, data$romantic)
 table()
