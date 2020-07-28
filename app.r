@@ -63,8 +63,7 @@ ui <- dashboardPage(
         h5(paste(" "), em("Logistic Regression"), "- allows the user to view 2 different types of output and to select the predictor
         variables to be included in the model.", sep=" "),
         h5(paste(" "), em("View Data"), "- allows the user to view the data and choose between the full data, a subset
-           based on", code("sex"), "or between the Training and Test data used for the supervised
-           models.", sep=" ")
+           based on", code("sex"), sep=" ")
         ),
       
       tabItem(tabName = "dataex",
@@ -161,10 +160,9 @@ ui <- dashboardPage(
      #View data
      h2("View Data"),
      h4(paste("This page allows the user to view the data and choose between the full data, a subset
-        based on"), code("sex"), "or between the Training and Test data used for the supervised
-        models.", sep=" "),
+        based on"), code("sex"), sep=" "),
        selectizeInput("subset", "Choose full or subset of data:", selected = "Full", 
-                            choices = c("Full", "Females", "Males", "Training", "Test")),
+                            choices = c("Full", "Females", "Males")),
      tableOutput("table")
      )
      
