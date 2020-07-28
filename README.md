@@ -1,13 +1,13 @@
 # project3
 
-library(shiny)
-library(shinydashboard)
-library(RColorBrewer)
-library(caret)
-library(tidyverse)
-library(caret)
-library(dplyr)
-library(ggplot2)
+library(shiny)  
+library(shinydashboard)  
+library(RColorBrewer)  
+library(caret)  
+library(tidyverse)  
+library(caret)  
+library(dplyr)  
+library(ggplot2)  
 
 runGitHub("project3", "jlspeer2")
 
