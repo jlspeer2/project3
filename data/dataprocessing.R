@@ -2,9 +2,13 @@
 #ST 558
 #Purpose: Explore the data and set up the static code to be used in the shiny app
 
-library(dplyr)
+library(shiny)
+library(shinydashboard)
+library(RColorBrewer)
+library(caret)
 library(tidyverse)
 library(caret)
+library(dplyr)
 library(ggplot2)
 
 #Read and limit data

@@ -1,7 +1,15 @@
+#Jessica Speer
+#ST 558
+#Purpose: Create R Shiny App for project 3
+
 library(shiny)
 library(shinydashboard)
 library(RColorBrewer)
 library(caret)
+library(tidyverse)
+library(caret)
+library(dplyr)
+library(ggplot2)
 
 ui <- dashboardPage(
   dashboardHeader(title = "Project3 Shiny App"),
@@ -19,6 +27,7 @@ ui <- dashboardPage(
     tabItems(
       
       tabItem(tabName = "intro",
+      #Introduction
         h2("Introduction"),
         h4(em("P. Cortez and A. Silva. Using Data Mining to Predict Secondary School Student 
               Performance. In A. Brito and J. Teixeira Eds., Proceedings of 5th FUture BUsiness 
@@ -55,9 +64,8 @@ ui <- dashboardPage(
         variables to be included in the model.", sep=" "),
         h5(paste(" "), em("View Data"), "- allows the user to view the data and choose between the full data, a subset
            based on", code("sex"), "or between the Training and Test data used for the supervised
-           models.", sep=" "),
+           models.", sep=" ")
         ),
-      
       
       tabItem(tabName = "dataex",
       #data exploration 
@@ -166,28 +174,23 @@ ui <- dashboardPage(
   )
 )  
 
-
-
-
-
-  
-
-
-
-
 server <- function(input, output, session) {
   
+  #get and limit data
   getData <- reactive({
     data=read.table("data/student-por.csv",sep=";",header=TRUE)
     data <- data %>% select(sex, school, studytime, activities, romantic, famrel,
                             freetime, goout, Walc)
   })
   
+  #get training data
   getTrain <- reactive({
     data<-getData()
     set.seed(1)
     train <- sample(1:nrow(data), size = nrow(data)*0.8)
   })
+  
+  #get test data
   getTest <- reactive({
     data<-getData()
     train<-getTrain()
@@ -195,13 +198,15 @@ server <- function(input, output, session) {
     test <- dplyr::setdiff(1:nrow(data), train)
   })
   
+  #set up URL for hyperlink
   url <- a("Data available here", href="https://archive.ics.uci.edu/ml/datasets/Student+Performance")
   
-  
+  #output hyperlink
   output$link <- renderUI({
     tagList(url)
   })
   
+  #output kNN results  
   output$knnprint <- renderPrint({
     train <- getTrain()
     dataTrain <- data[train, ]
@@ -223,6 +228,7 @@ server <- function(input, output, session) {
       }
   })
   
+  #output kNN plot
   output$knnplot <- renderPlot({
     train <- getTrain()
     dataTrain <- data[train, ]
@@ -244,6 +250,7 @@ server <- function(input, output, session) {
     }
   })
 
+  #output kNN predictions
   output$knnpred <- renderText({
     train <- getTrain()
     test <- getTest()
@@ -264,11 +271,13 @@ server <- function(input, output, session) {
     paste("The model predicts:", test_pred, sep = " ")
   })
   
+  #Dynamic UI for variable selection (logistic)
   output$predictors <- renderUI({
     checkboxGroupInput("predictors", "Predictor Variables:", choices = c("school", "studytime", "activities", "romantic",
                        "famrel", "freetime", "goout", "Walc"), selected="school")
   })
   
+  #output logistic regression output
   output$logsum <- renderPrint({
     train <- getTrain()
     test <- getTest()
@@ -303,10 +312,12 @@ server <- function(input, output, session) {
     }
   })
   
+  #Dynamic UI for variable selection (PCA)
   output$pcavars <- renderUI({
     checkboxGroupInput("pcavars", "Variables:", choices = c("studytime","famrel", "freetime", "goout", "Walc"))
   })
   
+  #output PCA plots
   output$pcaplot <- renderPlot({  
     data<-getData()
       PCs <- prcomp(select(data, studytime, famrel, freetime, goout, Walc) , center=input$center, scale =input$scale)
@@ -323,6 +334,7 @@ server <- function(input, output, session) {
     
   })
   
+  #output PCA results
   output$pcares <- renderPrint({  
     data<-getData()
     
@@ -331,178 +343,184 @@ server <- function(input, output, session) {
     
   }) 
 
-output$barplot <- renderPlot({  
-  data<-getData()
-  if(input$barvar=="sex"){
-    g <- ggplot(data, aes(x=sex))
-    g + geom_bar(aes(fill = data$sex)) +  scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="school"){
-    g <- ggplot(data, aes(x=school))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="studytime"){
-    g <- ggplot(data, aes(x=studytime))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="activities"){
-    g <- ggplot(data, aes(x=activities))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="romantic"){
-    g <- ggplot(data, aes(x=romantic))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="famrel"){
-    g <- ggplot(data, aes(x=famrel))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="freetime"){
-    g <- ggplot(data, aes(x=freetime))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="goout"){
-    g <- ggplot(data, aes(x=goout))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
-  else if(input$barvar=="Walc"){
-    g <- ggplot(data, aes(x=Walc))
-    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
-  }
+  #output barplots
+  #I hit an error trying to use input$barvar so had to take a more manual approach
+  output$barplot <- renderPlot({  
+    data<-getData()
+     if(input$barvar=="sex"){
+       g <- ggplot(data, aes(x=sex))
+       g + geom_bar(aes(fill = data$sex)) +  scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="school"){
+       g <- ggplot(data, aes(x=school))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="studytime"){
+       g <- ggplot(data, aes(x=studytime))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="activities"){
+       g <- ggplot(data, aes(x=activities))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="romantic"){
+       g <- ggplot(data, aes(x=romantic))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="famrel"){
+       g <- ggplot(data, aes(x=famrel))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="freetime"){
+       g <- ggplot(data, aes(x=freetime))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="goout"){
+       g <- ggplot(data, aes(x=goout))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
+     else if(input$barvar=="Walc"){
+       g <- ggplot(data, aes(x=Walc))
+       g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
+     }
 }) 
 
-output$Fmeans <- renderPrint({  
-  data<-getData()
-  if(input$barvar=="sex"){
-    paste("NA")
-  }
-  else if(input$barvar=="school"){
-    paste("NA")
-  }
-  else if(input$barvar=="studytime"){
-    mean(data$studytime[data$sex=="F"])
-  }
-  else if(input$barvar=="activities"){
-    mean(data$activities[data$sex=="F"])
-  }
-  else if(input$barvar=="romantic"){
-    print("NA")
-  }
-  else if(input$barvar=="famrel"){
-    mean(data$famrel[data$sex=="F"])  
-  }
-  else if(input$barvar=="freetime"){
-    mean(data$famrel[data$sex=="F"]) 
-  }
-  else if(input$barvar=="goout"){
-    mean(data$freetime[data$sex=="F"]) 
-  }
-  else if(input$barvar=="Walc"){
-    mean(data$Walc[data$sex=="F"])
-  }
-}) 
-
-output$clicki <- renderText({
-  
-  y_str <- function(e) {
-    if(is.null(e)) return("NULL\n")
-    paste0(round(e$y, 1), "\n")
-  }
-  
-  paste("Count =", y_str(input$plot_click), sep=" ")
-  
-})
-
-output$Mmeans <- renderPrint({  
-  data<-getData()
-  if(input$barvar=="sex"){
-    paste("NA")
-  }
-  else if(input$barvar=="school"){
-    paste("NA")
-  }
-  else if(input$barvar=="studytime"){
-    mean(data$studytime[data$sex=="M"])
-  }
-  else if(input$barvar=="activities"){
-    mean(data$activities[data$sex=="M"])
-  }
-  else if(input$barvar=="romantic"){
-    print("NA")
-  }
-  else if(input$barvar=="famrel"){
-    mean(data$famrel[data$sex=="M"])  
-  }
-  else if(input$barvar=="freetime"){
-    mean(data$famrel[data$sex=="M"]) 
-  }
-  else if(input$barvar=="goout"){
-    mean(data$freetime[data$sex=="M"]) 
-  }
-  else if(input$barvar=="Walc"){
-    mean(data$Walc[data$sex=="M"])
-  }
-})
-
-output$tabs <- renderPrint({  
-  data<-getData()
-  if(input$barvar=="sex"){
-    table(data$sex)
-  }
-  else if(input$barvar=="school"){
-    table(data$school, data$sex)
-  }
-  else if(input$barvar=="studytime"){
-    table(data$studytime, data$sex)
-  }
-  else if(input$barvar=="activities"){
-    table(data$activities, data$sex)
-  }
-  else if(input$barvar=="romantic"){
-    table(data$romantic, data$sex)
-  }
-  else if(input$barvar=="famrel"){
-    table(data$famrel, data$sex) 
-  }
-  else if(input$barvar=="freetime"){
-    table(data$freetime, data$sex)  
-  }
-  else if(input$barvar=="goout"){
-    table(data$goout, data$sex) 
-  }
-  else if(input$barvar=="Walc"){
-    table(data$Walc, data$sex)
-  }
-})
-
-#create output of observations    
-output$table <- renderTable({
-  if(input$subset=="Full"){  
-    getData()
-  }
-  else if(input$subset=="Females"){  
+  #Female means
+  output$Fmeans <- renderPrint({  
     data<-getData()
-    data[data$sex=="F",]
-  }
-  else if(input$subset=="Males"){  
+    if(input$barvar=="sex"){
+      paste("NA")
+    }
+    else if(input$barvar=="school"){
+      paste("NA")
+    }
+    else if(input$barvar=="studytime"){
+      mean(data$studytime[data$sex=="F"])
+    }
+    else if(input$barvar=="activities"){
+      mean(data$activities[data$sex=="F"])
+    }
+    else if(input$barvar=="romantic"){
+      print("NA")
+    }
+    else if(input$barvar=="famrel"){
+      mean(data$famrel[data$sex=="F"])  
+    }
+    else if(input$barvar=="freetime"){
+      mean(data$famrel[data$sex=="F"]) 
+    }
+    else if(input$barvar=="goout"){
+      mean(data$freetime[data$sex=="F"]) 
+    }
+    else if(input$barvar=="Walc"){
+      mean(data$Walc[data$sex=="F"])
+    }
+  }) 
+  
+  #Plot click functionality
+  output$clicki <- renderText({
+    
+    y_str <- function(e) {
+      if(is.null(e)) return("NULL\n")
+      paste0(round(e$y, 1), "\n")
+    }
+    
+    paste("Count =", y_str(input$plot_click), sep=" ")
+    
+  })
+  
+  #Male means
+  output$Mmeans <- renderPrint({  
     data<-getData()
-    data[data$sex=="M",]
-  }
-  else if(input$subset=="Training"){  
-    train <- getTrain()
-    dataTrain <- data[train, ]
-    dataTrain <- dataTrain %>% select(sex, school, studytime, activities, romantic, famrel,
-                              freetime, goout, Walc)
-    dataTrain
-  }
-  else if(input$subset=="Test"){  
-    test <- getTest()
-    dataTest <- data[test, ] 
-    dataTest <- dataTest %>% select(sex, school, studytime, activities, romantic, famrel,
-                              freetime, goout, Walc)
-    dataTest
-  } 
-})
+    if(input$barvar=="sex"){
+      paste("NA")
+    }
+    else if(input$barvar=="school"){
+      paste("NA")
+    }
+    else if(input$barvar=="studytime"){
+      mean(data$studytime[data$sex=="M"])
+    }
+    else if(input$barvar=="activities"){
+      mean(data$activities[data$sex=="M"])
+    }
+    else if(input$barvar=="romantic"){
+      print("NA")
+    }
+    else if(input$barvar=="famrel"){
+      mean(data$famrel[data$sex=="M"])  
+    }
+    else if(input$barvar=="freetime"){
+      mean(data$famrel[data$sex=="M"]) 
+    }
+    else if(input$barvar=="goout"){
+      mean(data$freetime[data$sex=="M"]) 
+    }
+    else if(input$barvar=="Walc"){
+      mean(data$Walc[data$sex=="M"])
+    }
+  })
+  
+  #crosstabs
+  output$tabs <- renderPrint({  
+    data<-getData()
+    if(input$barvar=="sex"){
+      table(data$sex)
+    }
+    else if(input$barvar=="school"){
+      table(data$school, data$sex)
+    }
+    else if(input$barvar=="studytime"){
+      table(data$studytime, data$sex)
+    }
+    else if(input$barvar=="activities"){
+      table(data$activities, data$sex)
+    }
+    else if(input$barvar=="romantic"){
+      table(data$romantic, data$sex)
+    }
+    else if(input$barvar=="famrel"){
+      table(data$famrel, data$sex) 
+    }
+    else if(input$barvar=="freetime"){
+      table(data$freetime, data$sex)  
+    }
+    else if(input$barvar=="goout"){
+      table(data$goout, data$sex) 
+    }
+    else if(input$barvar=="Walc"){
+      table(data$Walc, data$sex)
+    }
+  })
+  
+  #Output data   
+  output$table <- renderTable({
+    if(input$subset=="Full"){  
+      getData()
+    }
+    else if(input$subset=="Females"){  
+      data<-getData()
+      data[data$sex=="F",]
+    }
+    else if(input$subset=="Males"){  
+      data<-getData()
+      data[data$sex=="M",]
+    }
+    else if(input$subset=="Training"){  
+      train <- getTrain()
+      dataTrain <- data[train, ]
+      dataTrain <- dataTrain %>% select(sex, school, studytime, activities, romantic, famrel,
+                                freetime, goout, Walc)
+      dataTrain
+    }
+    else if(input$subset=="Test"){  
+      test <- getTest()
+      dataTest <- data[test, ] 
+      dataTest <- dataTest %>% select(sex, school, studytime, activities, romantic, famrel,
+                                freetime, goout, Walc)
+      dataTest
+    } 
+  })
 
 
 }
