@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(RColorBrewer)
 
 ui <- dashboardPage(
   dashboardHeader(title = "Project3 Shiny App"),
@@ -28,11 +29,11 @@ ui <- dashboardPage(
             and school related features) and it was collected by using school reports and 
             questionnaires. Two datasets are provided regarding the performance in two distinct 
             subjects: Mathematics and Portuguese language'"),
-        h2("About the App"),
+        h3("Data Used in the App"),
         h4(paste("In this app, we use the variable"), code("sex"), "as the outcome variable of
            interest. For consistency, this app uses the naming conventions defined by the authors.
            We used the Portuguese Subject data set, and selected a subset of 
-           variables for our analysis, which are described below.", sep=" "),
+           variables, which are described below.", sep=" "),
         h5(paste(" "), code("sex"), "- student's sex (F-female or M-male)", sep=" "),
         h5(paste(" "), code("school"), "student's school (GP-Gabriel Pereira or MS-Mousinho da Silveira)", sep=" "),
         h5(paste(" "), code("studytime"), "- weekly study time (1: <2 hours, 2: 2 to 5 hours, 3: 5 to 10 hours, or 4: >10 hours)", sep=" "),
@@ -41,7 +42,19 @@ ui <- dashboardPage(
         h5(paste(" "), code("famrel"), "- quality of family relationships (1: very bad to 5: excellent)", sep=" "),
         h5(paste(" "), code("freetime"), "- free time after school (1: very low to 5: very high)", sep=" "),
         h5(paste(" "), code("goout"), "- going out with friends (1: very low to 5: very high)", sep=" "),
-        h5(paste(" "), code("Walc"), "- weekend alcohol consumption (1: very low to 5: very high)", sep=" ")
+        h5(paste(" "), code("Walc"), "- weekend alcohol consumption (1: very low to 5: very high)", sep=" "),
+        h3("Capabilities of the App"),
+        h5(paste(" "), em("Data Exploration"), "- allows the user to select variables to view bar graphs, crosstabs, and means
+         for each respective variable. Additionally, the user may click on the plots to determine count values.", sep=" "),
+        h5(paste(" "), em("Principal Components Analysis"), "- allows the user to choose to center and/or scale the data, and allows a
+         selection between 2 plot types.", sep=" "),
+        h5(paste(" "), em("k-Nearest Neighbor"), "- allows the user to adjust the tuneLength parameter, select an option to display
+         a plot of the tuning parameter (k), and make predictions.", sep=" "),
+        h5(paste(" "), em("Logistic Regression"), "- allows the user to view 2 different types of output and to select the predictor
+        variables to be included in the model.", sep=" "),
+        h5(paste(" "), em("View Data"), "- allows the user to view the data and choose between the full data, a subset
+           based on", code("sex"), "or between the Training and Test data used for the supervised
+           models.", sep=" "),
         ),
       
       
@@ -51,7 +64,7 @@ ui <- dashboardPage(
       h4("This page allows the user to select variables to view bar graphs, crosstabs, and means
          for each respective variable (note: means are not calculated for binary variables.
          Additionally, the user may click on the plots to determine count values (this initializes 
-         after first click on plot"),
+         after first click on plot)"),
       selectizeInput("barvar", "Choose Variable:", selected = "sex", 
                      choices = c("sex", "school", "studytime", "activities", "romantic",
                                  "famrel", "freetime", "goout", "Walc")),
@@ -68,8 +81,8 @@ ui <- dashboardPage(
       tabItem(tabName = "pca",
       #PCA
       h2("Principal Components Analaysis"),
-      h4(paste("This page allows the user to choose to center and/or scale the data, and allows a
-         selection between 2 plot types.", br(), "hi", sep=" ")),
+      h4("This page allows the user to choose to center and/or scale the data, and allows a
+         selection between 2 plot types."),
       checkboxInput("center", h4("Center Variables"), value=TRUE),
       checkboxInput("scale", h4("Scale Variables"), value=TRUE),
         conditionalPanel(condition = "input.logOptVars == true", uiOutput("pcavars")
@@ -81,7 +94,11 @@ ui <- dashboardPage(
       ),
       
       tabItem(tabName = "knn",
-      #KNN Model   
+      #KNN Model
+      h2("k-Nearest Neighbors"),
+      h4("This page allows the user to adjust the tuneLength parameter, select an option to display
+         a plot of the tuning parameter (k), and make predictions. The default model (no tuneLength
+         specified) is optimized at k=9. Thus, this is the model used to make predictions."),
        checkboxInput("knnOptTL", h4("Adjust tuneLength")),
          conditionalPanel(condition = "input.knnOptTL == true",
            sliderInput("knnSetTL", "Choose value for tuneLength", min = 1, max = 20, 
@@ -116,6 +133,12 @@ ui <- dashboardPage(
       ),
       
      tabItem(tabName = "logistic",
+     #Logistic Regression
+     h2("Logistic Regression"),
+     h4("This page allows the user to view 2 different types of output and to select the predictor
+        variables to be included in the model. This default model/output is the optimized model with
+        all variables included. As a reminder, here is the form of the logistic model:"),
+     h3(withMathJax(helpText("$$ln(p/1-p) = \\beta_0x_0 + \\beta_1x_1 + \\beta_2x_2 + ... + \\beta_nx_n$$"))),
       selectizeInput("logop", "Output options:", selected = "Model Summary", 
                      choices = c("Model Summary", "Training Summary")
       ),
@@ -126,6 +149,11 @@ ui <- dashboardPage(
       ),
      
      tabItem(tabName = "viewdata",
+     #View data
+     h2("View Data"),
+     h4(paste("This page allows the user to view the data and choose between the full data, a subset
+        based on"), code("sex"), "or between the Training and Test data used for the supervised
+        models.", sep=" "),
        selectizeInput("subset", "Choose full or subset of data:", selected = "Full", 
                             choices = c("Full", "Females", "Males", "Training", "Test")),
      tableOutput("table")
@@ -172,14 +200,6 @@ server <- function(input, output, session) {
   output$link <- renderUI({
     tagList(url)
   })
-  
-  
-  output$inttxt <- renderText({
-    paste("hello this is placeholder text.  hello this is placeholder text. 
-       hello this is placeholder text. hello this is placeholder text.
-       hello this is placeholder text. hello this is placeholder text.")
-  })
-  
   
   output$knnprint <- renderPrint({
     train <- getTrain()
@@ -314,39 +334,39 @@ output$barplot <- renderPlot({
   data<-getData()
   if(input$barvar=="sex"){
     g <- ggplot(data, aes(x=sex))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) +  scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="school"){
     g <- ggplot(data, aes(x=school))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="studytime"){
     g <- ggplot(data, aes(x=studytime))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="activities"){
     g <- ggplot(data, aes(x=activities))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="romantic"){
     g <- ggplot(data, aes(x=romantic))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="famrel"){
     g <- ggplot(data, aes(x=famrel))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="freetime"){
     g <- ggplot(data, aes(x=freetime))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="goout"){
     g <- ggplot(data, aes(x=goout))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
   else if(input$barvar=="Walc"){
     g <- ggplot(data, aes(x=Walc))
-    g + geom_bar(aes(fill = data$sex))
+    g + geom_bar(aes(fill = data$sex)) + scale_fill_brewer(palette="Accent")
   }
 }) 
 
