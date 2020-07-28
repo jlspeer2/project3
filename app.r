@@ -183,21 +183,6 @@ server <- function(input, output, session) {
                             freetime, goout, Walc)
   })
   
-  #get training data
-  getTrain <- reactive({
-    data<-getData()
-    set.seed(1)
-    train <- sample(1:nrow(data), size = nrow(data)*0.8)
-  })
-  
-  #get test data
-  getTest <- reactive({
-    data<-getData()
-    train<-getTrain()
-    set.seed(1)
-    test <- dplyr::setdiff(1:nrow(data), train)
-  })
-  
   #set up URL for hyperlink
   url <- a("Data available here", href="https://archive.ics.uci.edu/ml/datasets/Student+Performance")
   
@@ -208,21 +193,20 @@ server <- function(input, output, session) {
   
   #output kNN results  
   output$knnprint <- renderPrint({
-    train <- getTrain()
-    dataTrain <- data[train, ]
+    data <- getData()
     
     trctrl <- trainControl(method = "repeatedcv", number = 3, repeats = 1)
     
     if(input$knnOptTL){
       knn_fit <- train(sex ~ school + studytime + activities + romantic +
-                       famrel + freetime + goout + Walc, data = dataTrain, method = "knn", 
+                       famrel + freetime + goout + Walc, data = data, method = "knn", 
                        trControl=trctrl, preProcess = c("center", "scale"), 
                        tuneLength=input$knnSetTL)
       knn_fit
     }
     else{
       knn_fit <- train(sex ~ school + studytime + activities + romantic +
-                     famrel + freetime + goout + Walc, data = dataTrain, method = "knn", 
+                     famrel + freetime + goout + Walc, data = data, method = "knn", 
                      trControl=trctrl, preProcess = c("center", "scale"))
       knn_fit
       }
@@ -230,21 +214,20 @@ server <- function(input, output, session) {
   
   #output kNN plot
   output$knnplot <- renderPlot({
-    train <- getTrain()
-    dataTrain <- data[train, ]
+    data <- getData()
     
     trctrl <- trainControl(method = "repeatedcv", number = 3, repeats = 1)
     
     if(input$knnOptTL){
       knn_fit <- train(sex ~ school + studytime + activities + romantic +
-                         famrel + freetime + goout + Walc, data = dataTrain, method = "knn", 
+                         famrel + freetime + goout + Walc, data = data, method = "knn", 
                        trControl=trctrl, preProcess = c("center", "scale"), 
                        tuneLength=input$knnSetTL)
       plot(knn_fit)
     }
     else{
       knn_fit <- train(sex ~ school + studytime + activities + romantic +
-                         famrel + freetime + goout + Walc, data = dataTrain, method = "knn", 
+                         famrel + freetime + goout + Walc, data = data, method = "knn", 
                        trControl=trctrl, preProcess = c("center", "scale"))
       plot(knn_fit)
     }
@@ -252,15 +235,12 @@ server <- function(input, output, session) {
 
   #output kNN predictions
   output$knnpred <- renderText({
-    train <- getTrain()
-    test <- getTest()
-    dataTrain <- data[train, ]
-    dataTest <- data[test, ]
+    data <- getData()
     
     trctrl <- trainControl(method = "repeatedcv", number = 3, repeats = 1)
     
     knn_fit <- train(sex ~ school + studytime + activities + romantic +
-                         famrel + freetime + goout + Walc, data = dataTrain, method = "knn", 
+                         famrel + freetime + goout + Walc, data = data, method = "knn", 
                        trControl=trctrl, preProcess = c("center", "scale"))
     new.obs <- data.frame(school=input$schoolp, studytime=input$studyp, activities=input$activp,
                             romantic=input$romp, famrel=input$famp, freetime=input$freep,
@@ -279,15 +259,13 @@ server <- function(input, output, session) {
   
   #output logistic regression output
   output$logsum <- renderPrint({
-    train <- getTrain()
-    test <- getTest()
-    dataTrain <- data[train, ]
+    data <- getData()
     
     trctrl <- trainControl(method = "repeatedcv", number = 3, repeats = 1)
     
     if(input$logOptVars & !is.null(input$predictors)){
       
-      log1<-train(as.formula(paste("sex","~",paste(input$predictors,collapse="+"))), data = dataTrain, 
+      log1<-train(as.formula(paste("sex","~",paste(input$predictors,collapse="+"))), data = data, 
                 trControl=trctrl,method="glm",family=binomial())
     
     
@@ -300,7 +278,7 @@ server <- function(input, output, session) {
     }
     else{
       log1<-train(sex ~ school + studytime + activities + romantic +
-                    famrel + freetime + goout + Walc, data = dataTrain, 
+                    famrel + freetime + goout + Walc, data = data, 
                   trControl=trctrl,method="glm",family=binomial())
       
       if(input$logop=="Model Summary"){
@@ -506,20 +484,6 @@ server <- function(input, output, session) {
       data<-getData()
       data[data$sex=="M",]
     }
-    else if(input$subset=="Training"){  
-      train <- getTrain()
-      dataTrain <- data[train, ]
-      dataTrain <- dataTrain %>% select(sex, school, studytime, activities, romantic, famrel,
-                                freetime, goout, Walc)
-      dataTrain
-    }
-    else if(input$subset=="Test"){  
-      test <- getTest()
-      dataTest <- data[test, ] 
-      dataTest <- dataTest %>% select(sex, school, studytime, activities, romantic, famrel,
-                                freetime, goout, Walc)
-      dataTest
-    } 
   })
 
 
