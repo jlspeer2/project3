@@ -5,17 +5,53 @@ ui <- dashboardPage(
   dashboardHeader(title = "Project3 Shiny App"),
   dashboardSidebar(
     sidebarMenu(
-      menuItem("Data Exploration", tabName = "data"),
+      menuItem("Intro", tabName = "intro"),
+      menuItem("Data Exploration", tabName = "dataex"),
       menuItem("Princpal Components Analysis", tabName = "pca"),
       menuItem("Model (kNN)", tabName = "knn"),
-      menuItem("Model (Logistic)", tabName = "logistic")
+      menuItem("Model (Logistic)", tabName = "logistic"),
+      menuItem("View Data", tabName = "viewdata")
     )
   ),
   dashboardBody(
     tabItems(
       
-      tabItem(tabName = "data",
+      tabItem(tabName = "intro",
+        h2("Introduction"),
+        h4(em("P. Cortez and A. Silva. Using Data Mining to Predict Secondary School Student 
+              Performance. In A. Brito and J. Teixeira Eds., Proceedings of 5th FUture BUsiness 
+              TEChnology Conference (FUBUTEC 2008) pp. 5-12, Porto, Portugal, April, 2008, 
+              EUROSIS, ISBN 978-9077381-39-7.")),
+        h4(uiOutput("link")),
+        h4(paste(" "), strong("From the authors:"), "'This data approach student achievement in secondary education of two 
+            Portuguese schools. The data attributes include student grades, demographic, social 
+            and school related features) and it was collected by using school reports and 
+            questionnaires. Two datasets are provided regarding the performance in two distinct 
+            subjects: Mathematics and Portuguese language'"),
+        h2("About the App"),
+        h4(paste("In this app, we use the variable"), code("sex"), "as the outcome variable of
+           interest. For consistency, this app uses the naming conventions defined by the authors.
+           We used the Portuguese Subject data set, and selected a subset of 
+           variables for our analysis, which are described below.", sep=" "),
+        h5(paste(" "), code("sex"), "- student's sex (F-female or M-male)", sep=" "),
+        h5(paste(" "), code("school"), "student's school (GP-Gabriel Pereira or MS-Mousinho da Silveira)", sep=" "),
+        h5(paste(" "), code("studytime"), "- weekly study time (1: <2 hours, 2: 2 to 5 hours, 3: 5 to 10 hours, or 4: >10 hours)", sep=" "),
+        h5(paste(" "), code("activities"), "- extra-curricular activities (yes or no)", sep=" "),
+        h5(paste(" "), code("romantic"), "- with a romantic relationship (yes or no)", sep=" "),
+        h5(paste(" "), code("famrel"), "- quality of family relationships (1: very bad to 5: excellent)", sep=" "),
+        h5(paste(" "), code("freetime"), "- free time after school (1: very low to 5: very high)", sep=" "),
+        h5(paste(" "), code("goout"), "- going out with friends (1: very low to 5: very high)", sep=" "),
+        h5(paste(" "), code("Walc"), "- weekend alcohol consumption (1: very low to 5: very high)", sep=" ")
+        ),
+      
+      
+      tabItem(tabName = "dataex",
       #data exploration 
+      h2("Data Exploration"),
+      h4("This page allows the user to select variables to view bar graphs, crosstabs, and means
+         for each respective variable (note: means are not calculated for binary variables.
+         Additionally, the user may click on the plots to determine count values (this initializes 
+         after first click on plot"),
       selectizeInput("barvar", "Choose Variable:", selected = "sex", 
                      choices = c("sex", "school", "studytime", "activities", "romantic",
                                  "famrel", "freetime", "goout", "Walc")),
@@ -30,13 +66,18 @@ ui <- dashboardPage(
       ),
 
       tabItem(tabName = "pca",
-      #PCA  
+      #PCA
+      h2("Principal Components Analaysis"),
+      h4(paste("This page allows the user to choose to center and/or scale the data, and allows a
+         selection between 2 plot types.", br(), "hi", sep=" ")),
       checkboxInput("center", h4("Center Variables"), value=TRUE),
       checkboxInput("scale", h4("Scale Variables"), value=TRUE),
         conditionalPanel(condition = "input.logOptVars == true", uiOutput("pcavars")
         ),
         verbatimTextOutput("pcares"),
-        plotOutput("biplot", width=600)
+      selectizeInput("pcapick", "Choose plot:", selected = "Biplot", 
+                     choices = c("Biplot", "Prop. of Variance Explained")),
+        plotOutput("pcaplot", width=600)
       ),
       
       tabItem(tabName = "knn",
@@ -82,7 +123,16 @@ ui <- dashboardPage(
       checkboxInput("logOptVars", h4("Choose predictor variables to include")),
         conditionalPanel(condition = "input.logOptVars == true", uiOutput("predictors")
       )
-      )
+      ),
+     
+     tabItem(tabName = "viewdata",
+       selectizeInput("subset", "Choose full or subset of data:", selected = "Full", 
+                            choices = c("Full", "Females", "Males", "Training", "Test")),
+     tableOutput("table")
+     )
+     
+     
+     
     )
   )
 )  
@@ -115,6 +165,21 @@ server <- function(input, output, session) {
     set.seed(1)
     test <- dplyr::setdiff(1:nrow(data), train)
   })
+  
+  url <- a("Data available here", href="https://archive.ics.uci.edu/ml/datasets/Student+Performance")
+  
+  
+  output$link <- renderUI({
+    tagList(url)
+  })
+  
+  
+  output$inttxt <- renderText({
+    paste("hello this is placeholder text.  hello this is placeholder text. 
+       hello this is placeholder text. hello this is placeholder text.
+       hello this is placeholder text. hello this is placeholder text.")
+  })
+  
   
   output$knnprint <- renderPrint({
     train <- getTrain()
@@ -221,11 +286,19 @@ server <- function(input, output, session) {
     checkboxGroupInput("pcavars", "Variables:", choices = c("studytime","famrel", "freetime", "goout", "Walc"))
   })
   
-  output$biplot <- renderPlot({  
+  output$pcaplot <- renderPlot({  
     data<-getData()
-      
       PCs <- prcomp(select(data, studytime, famrel, freetime, goout, Walc) , center=input$center, scale =input$scale)
-      biplot(PCs, xlabs = rep(".", nrow(data)), cex = 1.2)
+      if(input$pcapick=="Biplot"){
+        biplot(PCs, xlabs = rep(".", nrow(data)), cex = 1.2)
+      }
+      else{
+        par(mfrow = c(1, 2))
+        plot(PCs$sdev^2/sum(PCs$sdev^2), xlab = "Principal Component", 
+             ylab = "Proportion of Variance Explained", ylim = c(0, 1), type = 'b')
+        plot(cumsum(PCs$sdev^2/sum(PCs$sdev^2)), xlab = "Principal Component", 
+             ylab = "Cum. Prop of Variance Explained", ylim = c(0, 1), type = 'b')
+      }
     
   })
   
@@ -315,7 +388,7 @@ output$clicki <- renderText({
     paste0(round(e$y, 1), "\n")
   }
   
-  paste("Frequency =", y_str(input$plot_click), sep=" ")
+  paste("Count =", y_str(input$plot_click), sep=" ")
   
 })
 
@@ -379,6 +452,35 @@ output$tabs <- renderPrint({
   else if(input$barvar=="Walc"){
     table(data$Walc, data$sex)
   }
+})
+
+#create output of observations    
+output$table <- renderTable({
+  if(input$subset=="Full"){  
+    getData()
+  }
+  else if(input$subset=="Females"){  
+    data<-getData()
+    data[data$sex=="F",]
+  }
+  else if(input$subset=="Males"){  
+    data<-getData()
+    data[data$sex=="M",]
+  }
+  else if(input$subset=="Training"){  
+    train <- getTrain()
+    dataTrain <- data[train, ]
+    dataTrain <- dataTrain %>% select(sex, school, studytime, activities, romantic, famrel,
+                              freetime, goout, Walc)
+    dataTrain
+  }
+  else if(input$subset=="Test"){  
+    test <- getTest()
+    dataTest <- data[test, ] 
+    dataTest <- dataTest %>% select(sex, school, studytime, activities, romantic, famrel,
+                              freetime, goout, Walc)
+    dataTest
+  } 
 })
 
 
