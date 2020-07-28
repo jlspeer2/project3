@@ -62,7 +62,7 @@ ui <- dashboardPage(
          a plot of the tuning parameter (k), and make predictions.", sep=" "),
         h5(paste(" "), em("Logistic Regression"), "- allows the user to view 2 different types of output and to select the predictor
         variables to be included in the model.", sep=" "),
-        h5(paste(" "), em("View Data"), "- allows the user to view the data and choose between the full data, a subset
+        h5(paste(" "), em("View Data"), "- allows the user to view the data and choose between the full data or a subset
            based on", code("sex"), sep=" ")
         ),
       
@@ -159,7 +159,7 @@ ui <- dashboardPage(
      tabItem(tabName = "viewdata",
      #View data
      h2("View Data"),
-     h4(paste("This page allows the user to view the data and choose between the full data, a subset
+     h4(paste("This page allows the user to view the data and choose between the full data or a subset
         based on"), code("sex"), sep=" "),
        selectizeInput("subset", "Choose full or subset of data:", selected = "Full", 
                             choices = c("Full", "Females", "Males")),
